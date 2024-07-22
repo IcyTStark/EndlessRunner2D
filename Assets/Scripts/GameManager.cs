@@ -11,6 +11,9 @@ public class GameManager : MonoBehaviour
     private bool _hasGameStarted = false; 
     public bool HasGameStarted => _hasGameStarted;
 
+    private bool _isGameOver = false;
+    public bool IsGameOver => _isGameOver;
+
     [Header("Test Variables: ")]
     public bool isRunningOnASimulator = false; 
 
@@ -29,5 +32,13 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         _hasGameStarted = true;
+        UiManager.Instance.HandleMenuScreen(!_hasGameStarted);
+    }
+
+    public void TriggerGameOver()
+    {
+        Debug.Log("Game Over");
+        _isGameOver = true;
+        UiManager.Instance.HandleGameOverScreen(IsGameOver);
     }
 }

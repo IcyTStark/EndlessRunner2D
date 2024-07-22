@@ -17,7 +17,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Player Attributes: ")]
     [SerializeField]
-    [Range(0f, 100f)] private float _runSpeed = 10f;
+    [Range(0f, 1000f)] private float _runSpeed = 10f;
     [SerializeField]
     [Range(0f, 100f)] private float _jumpForce = 10f;
 
@@ -83,20 +83,8 @@ public class PlayerController : MonoBehaviour
         //{
         //    StartCoroutine(Slide());
         //}
-
-        if (GameManager.Instance.HasGameStarted)
-        {
-            transform.Translate(Vector3.right * _runSpeed * Time.deltaTime);
-        }
     }
 
-    /// <summary>
-    /// Plays the Animation based on Player State
-    /// </summary>
-    private void PlayAnimationBasedOnPlayerState(PlayerState playerState)
-    {
-        _animator.SetTrigger(playerState.ToString());
-    }
 
     /// <summary>
     /// Makes the player Jump
@@ -105,7 +93,17 @@ public class PlayerController : MonoBehaviour
     {
         _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, _jumpForce);
         _isGrounded = false;
-        PlayAnimationBasedOnPlayerState(PlayerState.JUMP);
+        _animator.SetBool("isJumping", !_isGrounded);
+        //PlayAnimationBasedOnPlayerState(PlayerState.JUMP);
+    }
+
+    private void FixedUpdate()
+    {
+        if (GameManager.Instance.HasGameStarted && !GameManager.Instance.IsGameOver)
+        {
+            _rigidbody2D.velocity = new Vector2(_runSpeed * Time.fixedDeltaTime, _rigidbody2D.velocity.y);
+            _animator.SetFloat("yVelocity", _rigidbody2D.velocity.y);
+        }
     }
 
     //IEnumerator Slide()
@@ -121,17 +119,31 @@ public class PlayerController : MonoBehaviour
     //    // Example: transform.localScale = new Vector3(transform.localScale.x, 1f, transform.localScale.z);
     //}
 
+    /// <summary>
+    /// Plays the Animation based on Player State
+    /// </summary>
+    private void PlayAnimationBasedOnPlayerState(PlayerState playerState)
+    {
+        _animator.SetTrigger(playerState.ToString());
+    }
+
+
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // Check if the player is touching the ground
         if (collision.gameObject.CompareTag("Ground"))
         {
             if (GameManager.Instance.HasGameStarted)
             {
                 Debug.Log("Ground Touched");
                 _isGrounded = true;
-                PlayAnimationBasedOnPlayerState(PlayerState.RUN);
+                _animator.SetBool("isJumping", !_isGrounded);
             }
+        }
+
+        if (collision.gameObject.CompareTag("Obstacle"))
+        {
+            PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
+            GameManager.Instance.TriggerGameOver();
         }
     }
 }
