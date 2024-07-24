@@ -2,69 +2,153 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.U2D;
+using UnityEngine.UIElements;
 
-[ExecuteInEditMode]
 public class LevelGenerator : MonoBehaviour
 {
-    [SerializeField] private SpriteShapeController _spriteShapeController;
+    [SerializeField] private SpriteShapeController spriteShapeController;
+    [SerializeField] private Transform playerReference;
 
-    [SerializeField, Range(3f, 100f)] private int _levelLength = 50;
-    [SerializeField, Range(1f, 50f)] private float _xMultiplier = 2f;
-    [SerializeField, Range(1f, 50f)] private float _yMultiplier = 2f;
-    [SerializeField, Range(0f, 1f)] private float _curveSmoothness = 0.5f;
-    [SerializeField] private float _noiseStep = 0.5f;
-    [SerializeField] private float _bottom = 10f;
+    [Header("Terrain Generation Settings")]
+    [SerializeField, Range(3, 100)] private int initialLevelLength = 50;
+    [SerializeField, Range(1f, 50f)] private float xMultiplier = 2f;
+    [SerializeField, Range(1f, 50f)] private float yMultiplier = 2f;
+    [SerializeField, Range(0f, 1f)] private float curveSmoothness = 0.5f;
+    [SerializeField] private float noiseStep = 0.5f;
+    [SerializeField] private float bottomDepth = 10f;
 
-    private Vector3 _lastPos;
+    [Header("Dynamic Generation Settings")]
+    [SerializeField] private float playerDistanceThreshold = 10f;
+    [SerializeField] private int newSegmentsPerGeneration = 10;
+
+    [SerializeField] private int currentLevelLength;
+    private Vector3 lastGeneratedPosition;
+    private bool isGeneratingNewSegment;
 
     private void Start()
     {
-        GenerateEnvironment();
+        currentLevelLength = initialLevelLength;
+        GenerateInitialTerrain();
     }
 
-    private void GenerateEnvironment()
+    private void Update()
     {
-        _spriteShapeController.spline.Clear();
+        CheckAndGenerateNewSegment();
+    }
 
-        for (int i = 0; i < _levelLength; i++)
+    private void GenerateInitialTerrain()
+    {
+        spriteShapeController.spline.Clear();
+
+        for (int i = 0; i < currentLevelLength; i++)
         {
-            _lastPos = transform.position + new Vector3(i * _xMultiplier, Mathf.PerlinNoise(0, i * _noiseStep) * _yMultiplier);
-            _spriteShapeController.spline.InsertPointAt(i, _lastPos);
-
-            if (i != 0 && i != _levelLength - 1)
-            {
-                _spriteShapeController.spline.SetTangentMode(i, ShapeTangentMode.Continuous);
-                _spriteShapeController.spline.SetLeftTangent(i, Vector3.left * _xMultiplier * _curveSmoothness);
-                _spriteShapeController.spline.SetRightTangent(i, Vector3.right * _xMultiplier * _curveSmoothness);
-            }
+            AddTerrainPoint(i);
         }
 
-        _spriteShapeController.spline.InsertPointAt(_levelLength, new Vector3(_lastPos.x, transform.position.y - _bottom));
-
-        _spriteShapeController.spline.InsertPointAt(_levelLength + 1, new Vector3(transform.position.x, transform.position.y - _bottom));
+        AddBottomPoints();
     }
 
-#if UNITY_EDITOR
-    private void OnValidate()
+    private void AddTerrainPoint(int index)
     {
-        _spriteShapeController.spline.Clear();
+        Vector3 position = CalculatePointPosition(index);
+        spriteShapeController.spline.InsertPointAt(index, position);
 
-        for (int i = 0; i < _levelLength; i++)
+        if (index > 0)
         {
-            _lastPos = transform.position + new Vector3(i * _xMultiplier, Mathf.PerlinNoise(0, i * _noiseStep) * _yMultiplier);
-            _spriteShapeController.spline.InsertPointAt(i, _lastPos);
-
-            if (i != 0 && i != _levelLength - 1)
-            {
-                _spriteShapeController.spline.SetTangentMode(i, ShapeTangentMode.Continuous);
-                _spriteShapeController.spline.SetLeftTangent(i, Vector3.left * _xMultiplier * _curveSmoothness);
-                _spriteShapeController.spline.SetRightTangent(i, Vector3.right * _xMultiplier * _curveSmoothness);
-            }
+            SetPointTangents(index);
         }
 
-        _spriteShapeController.spline.InsertPointAt(_levelLength, new Vector3(_lastPos.x, transform.position.y - _bottom));
-
-        _spriteShapeController.spline.InsertPointAt(_levelLength + 1, new Vector3(transform.position.x, transform.position.y - _bottom));
+        lastGeneratedPosition = position;
     }
-#endif
+
+    private Vector3 CalculatePointPosition(int index)
+    {
+        if (index < 2)
+        {
+            return transform.position + Vector3.right * index * xMultiplier;
+        }
+        return transform.position + new Vector3(index * xMultiplier, Mathf.PerlinNoise(0, index * noiseStep) * yMultiplier);
+    }
+
+    private void SetPointTangents(int index)
+    {
+        spriteShapeController.spline.SetTangentMode(index, ShapeTangentMode.Continuous);
+        float tangent = xMultiplier * curveSmoothness;
+        spriteShapeController.spline.SetLeftTangent(index, Vector3.left * tangent);
+        spriteShapeController.spline.SetRightTangent(index, Vector3.right * tangent);
+    }
+
+    private void AddBottomPoints()
+    {
+        Vector3 bottomRight = new Vector3(lastGeneratedPosition.x, transform.position.y - bottomDepth);
+        Vector3 bottomLeft = new Vector3(transform.position.x, transform.position.y - bottomDepth);
+
+        spriteShapeController.spline.InsertPointAt(currentLevelLength, bottomRight);
+        spriteShapeController.spline.InsertPointAt(currentLevelLength + 1, bottomLeft);
+    }
+
+    private void CheckAndGenerateNewSegment()
+    {
+        if (isGeneratingNewSegment)
+        {
+            return;
+        }
+
+        float playerDistance = Vector3.Distance(playerReference.position, spriteShapeController.spline.GetPosition(currentLevelLength - 2));
+
+        if (playerDistance < playerDistanceThreshold)
+        {
+            StartCoroutine(GenerateNewSegment());
+        }
+    }
+
+    private IEnumerator GenerateNewSegment()
+    {
+        isGeneratingNewSegment = true;
+
+        int newSegmentEnd = currentLevelLength + newSegmentsPerGeneration;
+
+        for (int i = currentLevelLength; i < newSegmentEnd; i++)
+        {
+            AddTerrainPoint(i);
+            yield return null; // Spread the generation over multiple frames
+        }
+
+        currentLevelLength = newSegmentEnd;
+        UpdateBottomPoints();
+
+        isGeneratingNewSegment = false;
+    }
+
+    private void UpdateBottomPoints()
+    {
+        spriteShapeController.spline.RemovePointAt(currentLevelLength);
+        spriteShapeController.spline.RemovePointAt(currentLevelLength);
+        AddBottomPoints();
+    }
+
+    [ContextMenu("Remove Bhai")]
+    private void RemoveAPoint()
+    {
+        spriteShapeController.spline.RemovePointAt(0);
+
+        currentLevelLength -= 1;
+
+        Vector3 bottomLeft = new Vector3(transform.position.x, transform.position.y - bottomDepth);
+
+        spriteShapeController.spline.InsertPointAt(currentLevelLength + 1, bottomLeft);
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (spriteShapeController != null && spriteShapeController.spline.GetPointCount() > 2)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireCube(spriteShapeController.spline.GetPosition(currentLevelLength - 2), Vector3.one * 2);
+        }
+    }
 }
+
+#region
+
+#endregion

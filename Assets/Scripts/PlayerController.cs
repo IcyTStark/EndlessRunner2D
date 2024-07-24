@@ -35,11 +35,6 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private Animator _animator;
 
-    private void Start()
-    {
-
-    }
-
     private void Update()
     {
         if (GameManager.Instance.isRunningOnASimulator)
@@ -127,14 +122,12 @@ public class PlayerController : MonoBehaviour
         _animator.SetTrigger(playerState.ToString());
     }
 
-
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
             if (GameManager.Instance.HasGameStarted)
             {
-                Debug.Log("Ground Touched");
                 _isGrounded = true;
                 _animator.SetBool("isJumping", !_isGrounded);
             }
