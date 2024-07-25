@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
 
 public enum PlayerState
 {
@@ -12,128 +14,163 @@ public enum PlayerState
 [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D), typeof(Animator))]
 public class PlayerController : MonoBehaviour
 {
-    [Header("Touch Attributes: ")]
+    [Header("Touch Attributes:")]
     private Touch _touch;
 
-    [Header("Player Attributes: ")]
-    [SerializeField]
-    [Range(0f, 1000f)] private float _runSpeed = 10f;
-    [SerializeField]
-    [Range(0f, 100f)] private float _jumpForce = 10f;
+    [Header("Player Attributes:")]
+    [SerializeField][Range(0f, 1000f)] private float _runSpeed = 10f;
+    [SerializeField][Range(0f, 100f)] private float _jumpForce = 10f;
+    [SerializeField] private float _slideDuration = 1f;
 
-    [Header("Player Control Variables: ")]
-    [SerializeField]
-    private bool _isGrounded = false;
-    [SerializeField]
-    private bool _isSliding = false;
+    [Header("Player Control Variables:")]
+    [SerializeField] private bool _isGrounded = false;
+    [SerializeField] private bool _isSliding = false;
 
-    [Header("Component References: ")]
-    [SerializeField]
-    private Rigidbody2D _rigidbody2D;
-    [SerializeField]
-    private BoxCollider2D _boxCollider2D;
-    [SerializeField]
-    private Animator _animator;
+    [Header("Component References:")]
+    [SerializeField] private Rigidbody2D _rigidbody2D;
+    [SerializeField] private BoxCollider2D _boxCollider2D;
+    [SerializeField] private Animator _animator;
+
+    private RaycastHit2D _groundHit;
+
+    private void Start()
+    {
+        if (_rigidbody2D == null) _rigidbody2D = GetComponent<Rigidbody2D>();
+        if (_boxCollider2D == null) _boxCollider2D = GetComponent<BoxCollider2D>();
+        if (_animator == null) _animator = GetComponent<Animator>();
+    }
 
     private void Update()
     {
-        if (GameManager.Instance.isRunningOnASimulator)
-        {
-            if (Input.touchCount > 0)
-            {
-                _touch = Input.GetTouch(0);
-
-                if (_touch.phase == TouchPhase.Began)
-                {
-                    if (!GameManager.Instance.HasGameStarted)
-                    {
-                        GameManager.Instance.StartGame();
-
-                        PlayAnimationBasedOnPlayerState(PlayerState.RUN);
-                    }
-                }
-            }
-        }
-        else
-        {
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                if (!GameManager.Instance.HasGameStarted)
-                {
-                    GameManager.Instance.StartGame();
-
-                    PlayAnimationBasedOnPlayerState(PlayerState.RUN);
-                }
-            }
-        }
-
-        // Jump when UpArrow key is pressed
-        if (Input.GetKeyDown(KeyCode.UpArrow) && _isGrounded && !_isSliding)
-        {
-            Jump();
-        }
-
-        // Slide when DownArrow key is pressed
-        //if (Input.GetKeyDown(KeyCode.DownArrow) && _isGrounded && !_isSliding)
-        //{
-        //    StartCoroutine(Slide());
-        //}
-    }
-
-
-    /// <summary>
-    /// Makes the player Jump
-    /// </summary>
-    void Jump()
-    {
-        _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, _jumpForce);
-        _isGrounded = false;
-        _animator.SetBool("isJumping", !_isGrounded);
-        //PlayAnimationBasedOnPlayerState(PlayerState.JUMP);
+        HandleInput();
     }
 
     private void FixedUpdate()
     {
         if (GameManager.Instance.HasGameStarted && !GameManager.Instance.IsGameOver)
         {
-            _rigidbody2D.velocity = new Vector2(_runSpeed * Time.fixedDeltaTime, _rigidbody2D.velocity.y);
-            _animator.SetFloat("yVelocity", _rigidbody2D.velocity.y);
+            Move();
+            //CheckGround();
+            AlignPlayerAngleBasedOnSurface();
         }
     }
 
-    //IEnumerator Slide()
-    //{
-    //    _isSliding = true;
-    //    // Adjust player collider and position for sliding here if needed
-    //    // Example: transform.localScale = new Vector3(transform.localScale.x, 0.5f, transform.localScale.z);
+    private void HandleInput()
+    {
+        if (GameManager.Instance.isRunningOnASimulator)
+        {
+            HandleTouchInput();
+        }
+        else
+        {
+            HandleKeyboardInput();
+        }
+    }
 
-    //    yield return new WaitForSeconds(slideDuration);
+    private void HandleTouchInput()
+    {
+        if (Input.touchCount > 0)
+        {
+            _touch = Input.GetTouch(0);
+            if (_touch.phase == TouchPhase.Began)
+            {
+                if (!GameManager.Instance.HasGameStarted)
+                {
+                    StartGame();
+                }
+                else
+                {
+                    Jump();
+                }
+            }
+        }
+    }
 
-    //    _isSliding = false;
-    //    // Reset player collider and position after sliding
-    //    // Example: transform.localScale = new Vector3(transform.localScale.x, 1f, transform.localScale.z);
-    //}
+    private void HandleKeyboardInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) && !GameManager.Instance.HasGameStarted)
+        {
+            StartGame();
+        }
 
-    /// <summary>
-    /// Plays the Animation based on Player State
-    /// </summary>
+        if (Input.GetKeyDown(KeyCode.UpArrow) && _isGrounded && !_isSliding)
+        {
+            Jump();
+        }
+
+        if (Input.GetKeyDown(KeyCode.DownArrow) && _isGrounded && !_isSliding)
+        {
+            StartCoroutine(Slide());
+        }
+    }
+
+    private void StartGame()
+    {
+        GameManager.Instance.StartGame();
+        PlayAnimationBasedOnPlayerState(PlayerState.RUN);
+    }
+
+    private void Move()
+    {
+        _rigidbody2D.velocity = new Vector2(_runSpeed * Time.fixedDeltaTime, _rigidbody2D.velocity.y);
+        _animator.SetFloat("yVelocity", _rigidbody2D.velocity.y);
+    }
+
+    private void Jump()
+    {
+        _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, _jumpForce);
+        _isGrounded = false;
+        _animator.SetBool("isJumping", true);
+    }
+
+    private IEnumerator Slide()
+    {
+        _isSliding = true;
+        // Adjust player collider and position for sliding
+        _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, _boxCollider2D.size.y / 2);
+        _boxCollider2D.offset = new Vector2(_boxCollider2D.offset.x, _boxCollider2D.offset.y / 2);
+        PlayAnimationBasedOnPlayerState(PlayerState.SLIDE);
+
+        yield return new WaitForSeconds(_slideDuration);
+
+        _isSliding = false;
+        // Reset player collider and position after sliding
+        _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, _boxCollider2D.size.y * 2);
+        _boxCollider2D.offset = new Vector2(_boxCollider2D.offset.x, _boxCollider2D.offset.y * 2);
+        PlayAnimationBasedOnPlayerState(PlayerState.RUN);
+    }
+
+    private void CheckGround()
+    {
+        _groundHit = Physics2D.Raycast(transform.position, Vector2.down, 1f, LayerMask.GetMask("Ground"));
+        _isGrounded = _groundHit.collider != null;
+        _animator.SetBool("isJumping", !_isGrounded);
+    }
+
+    private void AlignPlayerAngleBasedOnSurface()
+    {
+        if (_groundHit.collider != null)
+        {
+            Vector2 surfaceNormal = _groundHit.normal;
+            float angle = Mathf.Atan2(surfaceNormal.y, surfaceNormal.x) * Mathf.Rad2Deg + 90;
+            Quaternion targetRotation = Quaternion.Euler(0, 0, angle);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 5);
+        }
+    }
+
     private void PlayAnimationBasedOnPlayerState(PlayerState playerState)
     {
         _animator.SetTrigger(playerState.ToString());
     }
 
-    void OnCollisionEnter2D(Collision2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (collision.gameObject.CompareTag("Ground"))
+        if (collision.gameObject.CompareTag("Ground") && GameManager.Instance.HasGameStarted)
         {
-            if (GameManager.Instance.HasGameStarted)
-            {
-                _isGrounded = true;
-                _animator.SetBool("isJumping", !_isGrounded);
-            }
+            _isGrounded = true;
+            _animator.SetBool("isJumping", false);
         }
-
-        if (collision.gameObject.CompareTag("Obstacle"))
+        else if (collision.gameObject.CompareTag("Obstacle"))
         {
             PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
             GameManager.Instance.TriggerGameOver();
