@@ -6,7 +6,7 @@ public class ParallaxBackground : MonoBehaviour
     [SerializeField] private float[] _layerSpeeds = new float[7];
     [SerializeField] private GameObject[] _layers = new GameObject[7];
 
-    private float[] startPos = new float[7];
+    private float[] _startPos = new float[7];
     private float _backgroundBoundX;
     private float _backgroundSizeX;
 
@@ -17,7 +17,7 @@ public class ParallaxBackground : MonoBehaviour
         _backgroundBoundX = _layers[0].GetComponent<SpriteRenderer>().sprite.bounds.size.x;
         for (int i = 0; i < 5; i++)
         {
-            startPos[i] = this.transform.position.x;
+            _startPos[i] = this.transform.position.x;
         }
     }
 
@@ -29,15 +29,15 @@ public class ParallaxBackground : MonoBehaviour
 
             float distance = this.transform.position.x * _layerSpeeds[i];
 
-            _layers[i].transform.position = new Vector2(startPos[i] + distance, this.transform.position.y);
+            _layers[i].transform.position = new Vector2(_startPos[i] + distance, this.transform.position.y);
 
-            if (temp > startPos[i] + _backgroundBoundX * _backgroundSizeX)
+            if (temp > _startPos[i] + _backgroundBoundX * _backgroundSizeX)
             {
-                startPos[i] += _backgroundBoundX * _backgroundSizeX;
+                _startPos[i] += _backgroundBoundX * _backgroundSizeX;
             }
-            else if (temp < startPos[i] - _backgroundBoundX * _backgroundSizeX)
+            else if (temp < _startPos[i] - _backgroundBoundX * _backgroundSizeX)
             {
-                startPos[i] -= _backgroundBoundX * _backgroundSizeX;
+                _startPos[i] -= _backgroundBoundX * _backgroundSizeX;
             }
         }
     }

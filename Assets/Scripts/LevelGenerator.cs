@@ -31,10 +31,18 @@ public class LevelGenerator : MonoBehaviour
 
     private int _newPointPositionIndexValue = 0;
 
+    [Header("Obstacle Controllers: ")]
+    [SerializeField] private ObstacleGenerator _obstacleGenerator;
+    [SerializeField] private List<int> _randomSpawnIndex;
+    [SerializeField] private List<GameObject> _activeObstacles;
+
     private void Start()
     {
         _currentLevelLength = _initialLevelLength;
+
         GenerateInitialTerrain();
+
+        GenerateObstacles();
     }
 
     private void Update()
@@ -113,6 +121,10 @@ public class LevelGenerator : MonoBehaviour
             RemovePreviousPoints();
 
             StartCoroutine(GenerateNewSegment());
+
+            RemovePreviousObstacles();
+
+            GenerateObstacles();
         }
     }
 
@@ -167,6 +179,64 @@ public class LevelGenerator : MonoBehaviour
         Vector3 bottomLeft = new Vector3(_spriteShapeController.spline.GetPosition(0).x, transform.position.y - _bottomDepth);
 
         _spriteShapeController.spline.InsertPointAt(_currentLevelLength + 1, bottomLeft);
+    }
+
+    private void GenerateObstacles()
+    {
+        _randomSpawnIndex = GenerateUniqueRandomNumbers();
+
+        for (int i = 0; i < _randomSpawnIndex.Count; i++)
+        {
+            GameObject rock = _obstacleGenerator.GetPooledObject();
+
+            if(rock != null)
+            {
+                rock.transform.position = _spriteShapeController.spline.GetPosition(_randomSpawnIndex[i]);
+            }
+
+            rock.gameObject.SetActive(true);
+
+            _activeObstacles.Add(rock);
+        }
+    }
+
+    private void RemovePreviousObstacles()
+    {
+        for (int i = 0; i < _activeObstacles.Count; i++)
+        {
+            _activeObstacles[i].gameObject.SetActive(false);
+        }
+
+        _activeObstacles.Clear();
+
+        if (_randomSpawnIndex.Count > 0)
+        {
+            _randomSpawnIndex.Clear();
+        }
+    }
+
+    private List<int> GenerateUniqueRandomNumbers()
+    {
+        List<int> numbers = new List<int>();
+        List<int> availableNumbers = new List<int> { 4, 5, 6, 7, 8, 9};
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (availableNumbers.Count > 0)
+            {
+                int randomIndex = UnityEngine.Random.Range(0, availableNumbers.Count);
+                int selectedNumber = availableNumbers[randomIndex];
+                numbers.Add(selectedNumber);
+                availableNumbers.RemoveAt(randomIndex);
+            }
+            else
+            {
+                Debug.LogWarning("Not enough unique numbers available.");
+                break;
+            }
+        }
+
+        return numbers;
     }
 
     private void OnDrawGizmos()

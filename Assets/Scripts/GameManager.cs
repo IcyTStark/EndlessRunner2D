@@ -15,7 +15,9 @@ public class GameManager : MonoBehaviour
     public bool IsGameOver => _isGameOver;
 
     [Header("Test Variables: ")]
-    public bool isRunningOnASimulator = false; 
+    public bool isRunningOnASimulator = false;
+
+    public float HighScore = 0f;
 
     private void Awake()
     {
@@ -35,10 +37,13 @@ public class GameManager : MonoBehaviour
         UiManager.Instance.HandleMenuScreen(!_hasGameStarted);
     }
 
-    public void TriggerGameOver()
+    public void TriggerGameOver(float highScore)
     {
         Debug.Log("Game Over");
         _isGameOver = true;
+
+        HighScore = highScore;
+
         UiManager.Instance.HandleGameOverScreen(IsGameOver);
     }
 }

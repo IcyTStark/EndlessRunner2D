@@ -31,18 +31,35 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private BoxCollider2D _boxCollider2D;
     [SerializeField] private Animator _animator;
 
+    [Header("Raycast Operations: ")]
     private RaycastHit2D _groundHit;
+
+    [Header("VFX References: ")]
+    [SerializeField] private GameObject _walkVFX;
+
+    [Header("SFX References: ")]
+    private GameObject _jumpSFX;
+
+    [Header("HighScore References")]
+    [SerializeField] private Vector3 _initialPosition;
 
     private void Start()
     {
         if (_rigidbody2D == null) _rigidbody2D = GetComponent<Rigidbody2D>();
         if (_boxCollider2D == null) _boxCollider2D = GetComponent<BoxCollider2D>();
         if (_animator == null) _animator = GetComponent<Animator>();
+
+        _initialPosition = transform.position;
     }
 
     private void Update()
     {
-        HandleInput();
+        if (!GameManager.Instance.IsGameOver)
+        {
+            HandleInput();
+
+            ReturnHighScore();
+        }
     }
 
     private void FixedUpdate()
@@ -108,6 +125,7 @@ public class PlayerController : MonoBehaviour
     {
         GameManager.Instance.StartGame();
         PlayAnimationBasedOnPlayerState(PlayerState.RUN);
+        _walkVFX.gameObject.SetActive(true);
     }
 
     private void Move()
@@ -121,6 +139,8 @@ public class PlayerController : MonoBehaviour
         _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, _jumpForce);
         _isGrounded = false;
         _animator.SetBool("isJumping", true);
+
+        _walkVFX.SetActive(_isGrounded);
     }
 
     private IEnumerator Slide()
@@ -169,11 +189,18 @@ public class PlayerController : MonoBehaviour
         {
             _isGrounded = true;
             _animator.SetBool("isJumping", false);
+            _walkVFX.SetActive(_isGrounded);
         }
         else if (collision.gameObject.CompareTag("Obstacle"))
         {
             PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
-            GameManager.Instance.TriggerGameOver();
+
+            GameManager.Instance.TriggerGameOver(ReturnHighScore());
         }
+    }
+
+    private float ReturnHighScore()
+    {
+        return Vector3.Distance(_initialPosition, transform.position);
     }
 }
