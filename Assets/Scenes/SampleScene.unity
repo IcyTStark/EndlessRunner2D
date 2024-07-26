@@ -853,6 +853,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 837152282}
   m_CullTransparentMesh: 1
+--- !u!1 &897462849
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 897462850}
+  m_Layer: 0
+  m_Name: PowerUpHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &897462850
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 897462849}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &908841496
 GameObject:
   m_ObjectHideFlags: 0
@@ -2115,6 +2146,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: ProceduralTerrain
       objectReference: {fileID: 0}
+    - target: {fileID: 3958959658302608701, guid: 839c521be2f231049a4e059cf43acaa9, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4998181394967924100, guid: 839c521be2f231049a4e059cf43acaa9, type: 3}
+      propertyPath: _objectPooler
+      value: 
+      objectReference: {fileID: 1088441525}
     - target: {fileID: 4998181394967924100, guid: 839c521be2f231049a4e059cf43acaa9, type: 3}
       propertyPath: _playerReference
       value: 
@@ -2123,6 +2162,14 @@ PrefabInstance:
       propertyPath: _obstacleGenerator
       value: 
       objectReference: {fileID: 1088441525}
+    - target: {fileID: 6669934084903642698, guid: 839c521be2f231049a4e059cf43acaa9, type: 3}
+      propertyPath: m_Points.Array.data[1].y
+      value: -0.00031991454
+      objectReference: {fileID: 0}
+    - target: {fileID: 6669934084903642698, guid: 839c521be2f231049a4e059cf43acaa9, type: 3}
+      propertyPath: m_Points.Array.data[51].y
+      value: 5.8853793
+      objectReference: {fileID: 0}
     - target: {fileID: 8854625675594094959, guid: 839c521be2f231049a4e059cf43acaa9, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
@@ -2247,8 +2294,12 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1794289559742692473, guid: 2650739f17ee9644cb3084e96936d91b, type: 3}
       propertyPath: m_Name
-      value: ObstacleGenerator
+      value: ObjectPooler
       objectReference: {fileID: 0}
+    - target: {fileID: 3183779142655949771, guid: 2650739f17ee9644cb3084e96936d91b, type: 3}
+      propertyPath: _powerUpHolder
+      value: 
+      objectReference: {fileID: 897462850}
     - target: {fileID: 3183779142655949771, guid: 2650739f17ee9644cb3084e96936d91b, type: 3}
       propertyPath: _obstacleHolder
       value: 
@@ -2435,6 +2486,7 @@ SceneRoots:
   - {fileID: 908841497}
   - {fileID: 3519774665033977946}
   - {fileID: 455308939}
+  - {fileID: 897462850}
   - {fileID: 1985234542}
   - {fileID: 1297078869}
   - {fileID: 1246939858}

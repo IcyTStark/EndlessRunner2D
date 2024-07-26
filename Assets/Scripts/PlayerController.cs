@@ -48,6 +48,12 @@ public class PlayerController : MonoBehaviour
     [Header("HighScore References")]
     [SerializeField] private Vector3 _initialPosition;
 
+    [Header("Shield Properties: ")]
+    [SerializeField] private bool _isShielded = false;
+    [SerializeField] private float _shieldDuration = 5f;
+    [SerializeField] private float _localTimer = 0f;
+    [SerializeField] private GameObject _shield;
+
     [HideInInspector] public UnityEvent OnRetryClicked;
 
     private void Start()
@@ -70,6 +76,17 @@ public class PlayerController : MonoBehaviour
             HandleInput();
 
             UIManager.Instance.UpdatePlayerScore(ReturnCurrentScore());
+
+            if(_isShielded)
+            {
+                _localTimer -= Time.deltaTime;
+
+                if(_localTimer <= 0)
+                {
+                    _isShielded = false;
+                    _shield.gameObject.SetActive(_isShielded);
+                }
+            }
         }
     }
 
@@ -234,6 +251,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void OnShieldPickedUp()
+    {
+        _localTimer = _shieldDuration;
+        _isShielded = true;
+        _shield.gameObject.SetActive(_isShielded);
+    }
+
     private void PlayAnimationBasedOnPlayerState(PlayerState playerState)
     {
         _animator.SetTrigger(playerState.ToString());
@@ -256,13 +280,20 @@ public class PlayerController : MonoBehaviour
         }
         else if (collision.gameObject.CompareTag("Obstacle"))
         {
-            _isGrounded = true;
-            _isSliding = false;
-            _isPlayerDead = true;
-            _animator.SetBool("isJumping", false);
-            _animator.SetBool("isSliding", _isSliding);
-            PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
-            _walkVFX.SetActive(false);
+            if (!_isShielded)
+            {
+                _isGrounded = true;
+                _isSliding = false;
+                _isPlayerDead = true;
+                _animator.SetBool("isJumping", false);
+                _animator.SetBool("isSliding", _isSliding);
+                PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
+                _walkVFX.SetActive(false);
+            }
+            else
+            {
+                collision.gameObject.SetActive(false);
+            }
         }
     }
 

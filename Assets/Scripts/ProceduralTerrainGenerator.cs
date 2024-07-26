@@ -35,9 +35,13 @@ public class ProceduralTerrainGenerator : MonoBehaviour
     private int _newPointPositionIndexValue = 0;
 
     [Header("Obstacle Controllers: ")]
-    [SerializeField] private ObjectPooler _obstacleGenerator;
+    [SerializeField] private ObjectPooler _objectPooler;
     [SerializeField] private List<int> _randomSpawnIndex;
     [SerializeField] private List<GameObject> _activeObstacles;
+
+    [Header("PowerUp Controllers: ")]
+    [SerializeField] private int _randomSpawnIndexForPowerUps;
+    [SerializeField] private List<GameObject> _activePowerUps;
 
     private void Start()
     {
@@ -156,7 +160,7 @@ public class ProceduralTerrainGenerator : MonoBehaviour
 
         GenerateObstacles();
 
-        //RemovePreviousObstacles();
+        GeneratePowerUps();
     }
 
     private void UpdateBottomPoints()
@@ -208,7 +212,7 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         {
             bool isGroundObstacle = GetRandomZeroOrOne() == 1 ? true : false;
 
-            GameObject rock = isGroundObstacle ? _obstacleGenerator.GetGroundPooledObject() : _obstacleGenerator.GetAirPooledObject();
+            GameObject rock = isGroundObstacle ? _objectPooler.GetGroundPooledObject() : _objectPooler.GetAirPooledObject();
 
             if(rock != null)
             {
@@ -219,6 +223,34 @@ public class ProceduralTerrainGenerator : MonoBehaviour
 
             _activeObstacles.Add(rock);
         } 
+    }
+
+    private void GeneratePowerUps()
+    {
+        if (_activePowerUps.Count >= 1)
+        {
+            RemovePreviousPowerUps();
+        }
+
+        int initialPoints = 2;
+        int bottomPoints = 2;
+        int splineCount = _spriteShapeController.spline.GetPointCount() - bottomPoints;
+
+        do
+        {
+            _randomSpawnIndexForPowerUps = UnityEngine.Random.Range(initialPoints, splineCount);
+        } while (_randomSpawnIndex.Contains(_randomSpawnIndexForPowerUps));
+
+        GameObject powerUp = _objectPooler.GetPowerUpPooledObject();
+
+        if (powerUp != null)
+        {
+            powerUp.transform.position = _spriteShapeController.spline.GetPosition(_randomSpawnIndexForPowerUps);
+        }
+
+        powerUp.gameObject.SetActive(true);
+
+        _activePowerUps.Add(powerUp);
     }
 
     public int GetRandomZeroOrOne()
@@ -247,6 +279,25 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         if (_randomSpawnIndex.Count > 0)
         {
             _randomSpawnIndex.Clear();
+        }
+    }
+
+    private void RemovePreviousPowerUps(bool removeAllObstacles = false)
+    {
+        int numberOfPowerUpsToRemove = removeAllObstacles ? _activePowerUps.Count : 1;
+
+        for (int i = 0; i < numberOfPowerUpsToRemove; i++)
+        {
+            _activePowerUps[i].gameObject.SetActive(false);
+        }
+
+        if (removeAllObstacles)
+        {
+            _activePowerUps.Clear();
+        }
+        else
+        {
+            _activePowerUps.RemoveRange(0, numberOfPowerUpsToRemove);
         }
     }
 

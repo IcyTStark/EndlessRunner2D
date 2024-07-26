@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7929401355979157214}
   - component: {fileID: 3183779142655949771}
   m_Layer: 0
-  m_Name: ObstacleGenerator
+  m_Name: ObjectPooler
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -49,4 +49,8 @@ MonoBehaviour:
   _pooledAirObstacle: []
   _airObstacle: {fileID: 6012532358835508585, guid: 8a7eeaff109b59f4c8efe8b32edced3c, type: 3}
   _poolAmount: 6
+  _pooledPowerUp: []
+  _pooledPowerUpObject: {fileID: 2603448068329955720, guid: 4686cbdddd88d9348a655047be3f4194, type: 3}
+  _poolPowerUpAmount: 2
   _obstacleHolder: {fileID: 0}
+  _powerUpHolder: {fileID: 0}

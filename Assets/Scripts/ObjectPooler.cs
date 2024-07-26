@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ObjectPooler : MonoBehaviour
 {
-    [Header("Object Pooler Settings: ")]
+    [Header("Obstacle Pooler Settings: ")]
     [SerializeField] private List<GameObject> _pooledGroundObstacles = new List<GameObject>();
     [SerializeField] private GameObject _groundObstacle;
 
@@ -13,8 +13,15 @@ public class ObjectPooler : MonoBehaviour
 
     [SerializeField] private int _poolAmount;
 
+    [Header("PowerUp Pooler Settings: ")]
+    [SerializeField] private List<GameObject> _pooledPowerUp = new List<GameObject>();
+    [SerializeField] private GameObject _pooledPowerUpObject;
+
+    [SerializeField] private int _poolPowerUpAmount;
+
     [Header("Object Pooler Dependencies: ")]
     [SerializeField] private Transform _obstacleHolder;
+    [SerializeField] private Transform _powerUpHolder;
 
     private void Start()
     {
@@ -31,6 +38,13 @@ public class ObjectPooler : MonoBehaviour
             temp = Instantiate(_airObstacle, _obstacleHolder);
             temp.SetActive(false);
             _pooledAirObstacle.Add(temp);
+        }
+
+        for (int i = 0; i < _poolPowerUpAmount; i++)
+        {
+            temp = Instantiate(_pooledPowerUpObject, _powerUpHolder);
+            temp.SetActive(false);
+            _pooledPowerUp.Add(temp);
         }
     }
 
@@ -53,6 +67,18 @@ public class ObjectPooler : MonoBehaviour
             if (!_pooledAirObstacle[i].activeInHierarchy)
             {
                 return _pooledAirObstacle[i];
+            }
+        }
+        return null;
+    }
+
+    public GameObject GetPowerUpPooledObject()
+    {
+        for (int i = 0; i < _poolPowerUpAmount; i++)
+        {
+            if (!_pooledPowerUp[i].activeInHierarchy)
+            {
+                return _pooledPowerUp[i];
             }
         }
         return null;
