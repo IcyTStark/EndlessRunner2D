@@ -1,6 +1,6 @@
-using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Events;
 
 public enum PlayerState
 {
@@ -43,6 +43,8 @@ public class PlayerController : MonoBehaviour
     [Header("HighScore References")]
     [SerializeField] private Vector3 _initialPosition;
 
+    public UnityEvent OnRetryClicked;
+
     private void Start()
     {
         if (_rigidbody2D == null) _rigidbody2D = GetComponent<Rigidbody2D>();
@@ -50,6 +52,8 @@ public class PlayerController : MonoBehaviour
         if (_animator == null) _animator = GetComponent<Animator>();
 
         _initialPosition = transform.position;
+
+        OnRetryClicked.AddListener(OnRetry);
     }
 
     private void Update()
@@ -58,7 +62,7 @@ public class PlayerController : MonoBehaviour
         {
             HandleInput();
 
-            ReturnHighScore();
+            UIManager.Instance.UpdatePlayerScore(ReturnHighScore());
         }
     }
 
@@ -74,13 +78,16 @@ public class PlayerController : MonoBehaviour
 
     private void HandleInput()
     {
-        if (GameManager.Instance.isRunningOnASimulator)
+        if (!GameManager.Instance.IsGameOver)
         {
-            HandleTouchInput();
-        }
-        else
-        {
-            HandleKeyboardInput();
+            if (GameManager.Instance.isRunningOnASimulator)
+            {
+                HandleTouchInput();
+            }
+            else
+            {
+                HandleKeyboardInput();
+            }
         }
     }
 
@@ -97,7 +104,10 @@ public class PlayerController : MonoBehaviour
                 }
                 else
                 {
-                    Jump();
+                    if (_isGrounded && !_isSliding)
+                    {
+                        Jump();
+                    }
                 }
             }
         }
@@ -193,14 +203,31 @@ public class PlayerController : MonoBehaviour
         }
         else if (collision.gameObject.CompareTag("Obstacle"))
         {
+            _isGrounded = true;
+            _animator.SetBool("isJumping", false);
             PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
-
-            GameManager.Instance.TriggerGameOver(ReturnHighScore());
+            _walkVFX.SetActive(false);
         }
     }
 
-    private float ReturnHighScore()
+    private void OnPlayerDead()
     {
-        return Vector3.Distance(_initialPosition, transform.position);
+        GameManager.Instance.TriggerGameOver(ReturnHighScore());
+    }
+
+    private long ReturnHighScore()
+    {
+        float DistanceTravelled = Vector3.Distance(_initialPosition, transform.position);
+
+        long score = (long)DistanceTravelled;
+
+        return score;
+    }
+
+    private void OnRetry()
+    {
+        transform.position = _initialPosition;
+
+        PlayAnimationBasedOnPlayerState(PlayerState.IDLE);
     }
 }

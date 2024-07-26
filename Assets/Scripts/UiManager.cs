@@ -5,9 +5,9 @@ using UnityEngine;
 
 using DG.Tweening;
 
-public class UiManager : MonoBehaviour
+public class UIManager : MonoBehaviour
 {
-    public static UiManager Instance;
+    public static UIManager Instance;
 
     [Header("Menu Screen Reference: ")]
     [SerializeField] private GameObject _menuScreen;
@@ -17,6 +17,10 @@ public class UiManager : MonoBehaviour
 
     [Header("Game Over Reference: ")]
     [SerializeField] private GameObject _gameOverScreen;
+    [SerializeField] private TextMeshProUGUI _gameOverScoreText;
+
+    [Header("Game Panel Reference: ")]
+    [SerializeField] private TextMeshProUGUI _scoreText;
 
     private void Awake()
     {
@@ -32,17 +36,41 @@ public class UiManager : MonoBehaviour
     {
         if (!activeState)
         {
-            _tapToPlay.gameObject.SetActive(false);
+            _tapToPlay.gameObject.SetActive(activeState);
 
             _gameTitleText.DOFade(0f, 2f).SetEase(Ease.OutSine).OnComplete(()=>
             {
                 _menuScreen.SetActive(activeState);
             });
         }
+        else
+        {
+            _menuScreen.SetActive(activeState);
+
+            _gameTitleText.DOFade(1f, 0.25f).SetEase(Ease.OutQuart);
+
+            _tapToPlay.gameObject.SetActive(activeState);
+        }
     }
 
     public void HandleGameOverScreen(bool activeState)
     {
+        _gameOverScoreText.text = _scoreText.text;
+
         _gameOverScreen.SetActive(activeState);
+    }
+
+    public void Home()
+    {
+        GameManager.Instance.OnRetry();
+
+        HandleGameOverScreen(GameManager.Instance.IsGameOver);
+
+        HandleMenuScreen(true);
+    }
+
+    public void UpdatePlayerScore(long score)
+    {
+        _scoreText.text = $"{score} m";
     }
 }

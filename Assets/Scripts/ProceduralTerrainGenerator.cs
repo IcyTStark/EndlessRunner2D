@@ -1,11 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.U2D;
 using UnityEngine.UIElements;
 
-public class LevelGenerator : MonoBehaviour
+public class ProceduralTerrainGenerator : MonoBehaviour
 {
     [SerializeField] private SpriteShapeController _spriteShapeController;
     [SerializeField] private Transform _playerReference;
@@ -36,7 +38,16 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private List<int> _randomSpawnIndex;
     [SerializeField] private List<GameObject> _activeObstacles;
 
+    public UnityEvent OnRetryClicked;
+
     private void Start()
+    {
+        Initialize();
+
+        OnRetryClicked.AddListener(OnRetry);
+    }
+
+    private void Initialize()
     {
         _currentLevelLength = _initialLevelLength;
 
@@ -120,11 +131,7 @@ public class LevelGenerator : MonoBehaviour
         {
             RemovePreviousPoints();
 
-            StartCoroutine(GenerateNewSegment());
-
-            RemovePreviousObstacles();
-
-            GenerateObstacles();
+            StartCoroutine(GenerateNewSegment());  
         }
     }
 
@@ -137,13 +144,17 @@ public class LevelGenerator : MonoBehaviour
         for (int i = _currentLevelLength; i < newSegmentEnd; i++)
         {
             AddTerrainPoint(i, true);
-            yield return null; // Spread the generation over multiple frames
+            yield return null;
         }
 
         _currentLevelLength = newSegmentEnd;
         UpdateBottomPoints();
 
         _isGeneratingNewSegment = false;
+
+        RemovePreviousObstacles();
+
+        GenerateObstacles();
     }
 
     private void UpdateBottomPoints()
@@ -217,26 +228,19 @@ public class LevelGenerator : MonoBehaviour
 
     private List<int> GenerateUniqueRandomNumbers()
     {
-        List<int> numbers = new List<int>();
-        List<int> availableNumbers = new List<int> { 4, 5, 6, 7, 8, 9};
+        HashSet<int> numbers = new HashSet<int>();
 
-        for (int i = 0; i < 3; i++)
+        int initialPoints = 2;
+        int bottomPoints = 2;
+        int splineCount = _spriteShapeController.spline.GetPointCount() - bottomPoints;
+
+        while (numbers.Count < 3)
         {
-            if (availableNumbers.Count > 0)
-            {
-                int randomIndex = UnityEngine.Random.Range(0, availableNumbers.Count);
-                int selectedNumber = availableNumbers[randomIndex];
-                numbers.Add(selectedNumber);
-                availableNumbers.RemoveAt(randomIndex);
-            }
-            else
-            {
-                Debug.LogWarning("Not enough unique numbers available.");
-                break;
-            }
+            int randomNumber = UnityEngine.Random.Range(initialPoints, splineCount);
+            numbers.Add(randomNumber);
         }
 
-        return numbers;
+        return numbers.ToList();
     }
 
     private void OnDrawGizmos()
@@ -246,6 +250,18 @@ public class LevelGenerator : MonoBehaviour
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireCube(_spriteShapeController.spline.GetPosition(_currentLevelLength - 2), Vector3.one * 2);
         }
+    }
+
+    private void OnRetry()
+    {
+        //Reset all the values
+        _lastGeneratedPosition = Vector3.zero;
+
+        RemovePreviousObstacles();
+
+        _newPointPositionIndexValue = 0;
+
+        Initialize();
     }
 }
 

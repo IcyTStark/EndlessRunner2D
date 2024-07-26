@@ -19,6 +19,12 @@ public class GameManager : MonoBehaviour
 
     public float HighScore = 0f;
 
+    [Header("Class References: ")]
+
+    [SerializeField] private PlayerController _playerController;
+    [SerializeField] private ProceduralTerrainGenerator _proceduralTerrainGenerator;
+    [SerializeField] private FollowCamera _followCamera;
+
     private void Awake()
     {
         if(Instance == null)
@@ -34,16 +40,25 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         _hasGameStarted = true;
-        UiManager.Instance.HandleMenuScreen(!_hasGameStarted);
+        UIManager.Instance.HandleMenuScreen(!_hasGameStarted);
     }
 
     public void TriggerGameOver(float highScore)
     {
-        Debug.Log("Game Over");
         _isGameOver = true;
 
         HighScore = highScore;
 
-        UiManager.Instance.HandleGameOverScreen(IsGameOver);
+        UIManager.Instance.HandleGameOverScreen(IsGameOver);
+    }
+
+    public void OnRetry()
+    {
+        _hasGameStarted = false;
+        _isGameOver = false;
+
+        _playerController.OnRetryClicked.Invoke();
+        _proceduralTerrainGenerator.OnRetryClicked.Invoke();
+        _followCamera.OnRetryClicked.Invoke();
     }
 }
