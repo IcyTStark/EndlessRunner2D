@@ -34,3 +34,7 @@ Score is given based on the distance traveled.
 
 ### Art Style
 - 2D cartoon-style graphics with snowy theme.
+
+## Credits
+
+I would like to kindly remind that, although this project was developed as part of an interview task, the intellectual property and associated rights are retained by me. If there are any plans to use or distribute this project beyond the scope of the interview, I would appreciate being contacted. Thanks a lot for the oppurtunity! This was a great project.
