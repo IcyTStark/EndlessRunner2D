@@ -1,12 +1,14 @@
-This Game Features Two Control System 
-1) PC:
- - Space Bar -> To Start the Game
- - UpArrow -> To Jump
- - DownArrow -> To Slide
+# Controls
 
-2) Mobile:
- - Tap -> To Start the Game
- - SwipeUp -> Jump
- - SwipeDown -> Slide 
+## PC
+- **Space Bar:** To Start the Game
+- **Up Arrow:** To Jump
+- **Down Arrow:** To Slide
 
-There is an option inside GameManager that give you to switch between both the control scheme within the editor
+## Mobile
+- **Tap:** To Start the Game
+- **Swipe Up:** To Jump
+- **Swipe Down:** To Slide
+
+### Control Scheme Switching
+There is an option inside the `GameManager` that allows you to switch between both control schemes within the editor.
