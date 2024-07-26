@@ -1,4 +1,4 @@
-# Procedural Terrain Generator Level Design Instructions
+# Level Design Instructions
 
 This document provides instructions on how to design and customize levels using the `ProceduralTerrainGenerator` script.
 
