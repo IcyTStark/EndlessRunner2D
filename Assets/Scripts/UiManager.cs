@@ -35,6 +35,10 @@ public class UIManager : MonoBehaviour
         _tapToPlay.transform.DOPunchScale(Vector3.one * 0.1f, 1f, 0, 0).SetLoops(-1);
     }
 
+    /// <summary>
+    /// Handles Menu Screen
+    /// </summary>
+    /// <param name="activeState"></param>
     public void HandleMenuScreen(bool activeState)
     {
         if (!activeState)
@@ -53,9 +57,15 @@ public class UIManager : MonoBehaviour
             _gameTitleText.DOFade(1f, 0.25f).SetEase(Ease.OutQuart);
 
             _tapToPlay.gameObject.SetActive(activeState);
+
+            _tapToPlay.transform.DOPunchScale(Vector3.one * 0.1f, 1f, 0, 0).SetLoops(-1);
         }
     }
 
+    /// <summary>
+    /// Handles Game Over Activates and Reactivates
+    /// </summary>
+    /// <param name="activeState"></param>
     public void HandleGameOverScreen(bool activeState)
     {
         _gameOverScoreText.text = _scoreText.text;
@@ -63,6 +73,9 @@ public class UIManager : MonoBehaviour
         _gameOverScreen.SetActive(activeState);
     }
 
+    /// <summary>
+    /// On Home Button Clicked
+    /// </summary>
     public void Home()
     {
         GameManager.Instance.OnRetry();
@@ -72,6 +85,10 @@ public class UIManager : MonoBehaviour
         HandleMenuScreen(true);
     }
 
+    /// <summary>
+    /// Updates Player Score
+    /// </summary>
+    /// <param name="score"></param>
     public void UpdatePlayerScore(long score)
     {
         _scoreText.text = $"{score} m";

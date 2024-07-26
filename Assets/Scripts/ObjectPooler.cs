@@ -23,6 +23,9 @@ public class ObjectPooler : MonoBehaviour
     [SerializeField] private Transform _obstacleHolder;
     [SerializeField] private Transform _powerUpHolder;
 
+    /// <summary>
+    /// Instantiates and populates list
+    /// </summary>
     private void Start()
     {
         GameObject temp;
@@ -48,6 +51,10 @@ public class ObjectPooler : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Returns a Ground Obstalce
+    /// </summary>
+    /// <returns></returns>
     public GameObject GetGroundPooledObject()
     {
         for (int i = 0; i < _poolAmount; i++)
@@ -60,6 +67,10 @@ public class ObjectPooler : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Returns a Air Obstacle
+    /// </summary>
+    /// <returns></returns>
     public GameObject GetAirPooledObject()
     {
         for (int i = 0; i < _poolAmount; i++)
@@ -72,6 +83,10 @@ public class ObjectPooler : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Returns a Power Up Obstalce
+    /// </summary>
+    /// <returns></returns>
     public GameObject GetPowerUpPooledObject()
     {
         for (int i = 0; i < _poolPowerUpAmount; i++)

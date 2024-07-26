@@ -38,16 +38,23 @@ public class ProceduralTerrainGenerator : MonoBehaviour
     [SerializeField] private ObjectPooler _objectPooler;
     [SerializeField] private List<int> _randomSpawnIndex;
     [SerializeField] private List<GameObject> _activeObstacles;
+    [SerializeField] private int _obstacleSpawnCountPerGeneration = 3;
 
     [Header("PowerUp Controllers: ")]
     [SerializeField] private int _randomSpawnIndexForPowerUps;
     [SerializeField] private List<GameObject> _activePowerUps;
+    [SerializeField] private int _powerUpSpawnCountPerGeneration = 1;
 
     private void Start()
     {
         Initialize();
     }
 
+    /// <summary>
+    /// Generates Initial Terrain
+    /// Has a Callback if its being called from game reset
+    /// </summary>
+    /// <param name="onGenerated"></param>
     private void Initialize(Action onGenerated = null)
     {
         _currentLevelLength = _initialLevelLength;
@@ -67,6 +74,10 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Generates Initial Terrain
+    /// </summary>
+    /// <param name="onGenerated"></param>
     private void GenerateInitialTerrain(Action onGenerated = null)
     {
         _spriteShapeController.spline.Clear();
@@ -79,6 +90,11 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         AddBottomPoints();
     }
 
+    /// <summary>
+    /// Adds a terrain point
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="isFromNewGeneration"></param>
     private void AddTerrainPoint(int index, bool isFromNewGeneration = false)
     {
         Vector3 position = CalculatePointPosition(index, isFromNewGeneration);
@@ -93,6 +109,12 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _lastGeneratedPosition = position;
     }
 
+    /// <summary>
+    /// Return a 'x' and 'y' point
+    /// </summary>
+    /// <param name="index"></param>
+    /// <param name="isFromNewGeneration"></param>
+    /// <returns></returns>
     private Vector3 CalculatePointPosition(int index, bool isFromNewGeneration)
     {
         index = isFromNewGeneration ? (index + _newPointPositionIndexValue) : index;
@@ -104,6 +126,10 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         return transform.position + new Vector3(index * _xMultiplier, Mathf.PerlinNoise(0, index * _noiseStep) * _yMultiplier);
     }
 
+    /// <summary>
+    /// Sets Tangent for generated points
+    /// </summary>
+    /// <param name="index"></param>
     private void SetPointTangents(int index)
     {
         _spriteShapeController.spline.SetTangentMode(index, ShapeTangentMode.Continuous);
@@ -112,6 +138,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _spriteShapeController.spline.SetRightTangent(index, Vector3.right * tangent);
     }
 
+    /// <summary>
+    /// Adds Bottom Points 
+    /// </summary>
     private void AddBottomPoints()
     {
         Vector3 bottomRight = new Vector3(_lastGeneratedPosition.x, transform.position.y - _bottomDepth);
@@ -121,6 +150,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _spriteShapeController.spline.InsertPointAt(_currentLevelLength + 1, bottomLeft);
     }
 
+    /// <summary>
+    /// Checks to see if the player is near the end of current terrain to remove previous points and spawn new ones
+    /// </summary>
     private void CheckAndGenerateNewSegment()
     {
         if (_isGeneratingNewSegment)
@@ -141,6 +173,10 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Generates new segment
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator GenerateNewSegment()
     {
         _isGeneratingNewSegment = true;
@@ -163,6 +199,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         GeneratePowerUps();
     }
 
+    /// <summary>
+    /// Updates the bottom points based on new terrain segment
+    /// </summary>
     private void UpdateBottomPoints()
     {
         _spriteShapeController.spline.RemovePointAt(_currentLevelLength + 1);
@@ -178,6 +217,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _spriteShapeController.spline.InsertPointAt(_currentLevelLength + 1, bottomLeft);
     }
 
+    /// <summary>
+    /// Removes all the terrain points previous points
+    /// </summary>
     public void RemovePreviousPoints()
     {
         _pointsToDeletePerFrame = _currentLevelLength - 3;
@@ -198,7 +240,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _spriteShapeController.spline.InsertPointAt(_currentLevelLength + 1, bottomLeft);
     }
 
-    [ContextMenu("Test")]
+    /// <summary>
+    /// Generates Obstacle
+    /// </summary>
     private void GenerateObstacles()
     {
         if (_activeObstacles.Count >= 6)
@@ -225,6 +269,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         } 
     }
 
+    /// <summary>
+    /// Generates Power Up
+    /// </summary>
     private void GeneratePowerUps()
     {
         if (_activePowerUps.Count >= 1)
@@ -253,14 +300,24 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _activePowerUps.Add(powerUp);
     }
 
+    /// <summary>
+    /// Returns either 1 or 0 
+    /// On return 1 spawns grounds obstacle
+    /// On return 2 spawns air obstacle
+    /// </summary>
+    /// <returns></returns>
     public int GetRandomZeroOrOne()
     {
         return UnityEngine.Random.Range(0, 2);
     }
 
+    /// <summary>
+    /// Removes Previous Obstacles
+    /// </summary>
+    /// <param name="removeAllObstacles"></param>
     private void RemovePreviousObstacles(bool removeAllObstacles = false)
     {
-        int numberOfObstaclesToRemove = removeAllObstacles ? _activeObstacles.Count : 3;
+        int numberOfObstaclesToRemove = removeAllObstacles ? _activeObstacles.Count : _obstacleSpawnCountPerGeneration;
 
         for (int i = 0; i < numberOfObstaclesToRemove; i++)
         {
@@ -282,16 +339,20 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
-    private void RemovePreviousPowerUps(bool removeAllObstacles = false)
+    /// <summary>
+    /// Removes Previous PowerUps
+    /// </summary>
+    /// <param name="removeAllPowerUps"></param>
+    private void RemovePreviousPowerUps(bool removeAllPowerUps = false)
     {
-        int numberOfPowerUpsToRemove = removeAllObstacles ? _activePowerUps.Count : 1;
+        int numberOfPowerUpsToRemove = removeAllPowerUps ? _activePowerUps.Count : _powerUpSpawnCountPerGeneration;
 
         for (int i = 0; i < numberOfPowerUpsToRemove; i++)
         {
             _activePowerUps[i].gameObject.SetActive(false);
         }
 
-        if (removeAllObstacles)
+        if (removeAllPowerUps)
         {
             _activePowerUps.Clear();
         }
@@ -301,6 +362,10 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Generates Unique Numbers
+    /// </summary>
+    /// <returns></returns>
     private List<int> GenerateUniqueRandomNumbers()
     {
         HashSet<int> numbers = new HashSet<int>();
@@ -327,6 +392,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Resets Values and Regenerates Levels
+    /// </summary>
     public void OnRetry(Action onGenerated)
     {
         //Reset all the values

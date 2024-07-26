@@ -39,6 +39,9 @@ public class FollowCamera : MonoBehaviour
         transform.position = Vector3.SmoothDamp(transform.position, _desiredPosition, ref _velocity, _cameraSmoothSpeed);
     }
 
+    /// <summary>
+    /// Resets Camera On Game Reset
+    /// </summary>
     private void OnRetry()
     {
         _velocity = Vector3.zero;

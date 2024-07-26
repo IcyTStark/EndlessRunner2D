@@ -95,11 +95,12 @@ public class PlayerController : MonoBehaviour
         if (GameManager.Instance.HasGameStarted && !_isPlayerDead && !GameManager.Instance.IsGameOver)
         {
             Move();
-            //CheckGround();
-            //AlignPlayerAngleBasedOnSurface();
         }
     }
 
+    /// <summary>
+    /// Handles Input based on a Bool which can make input compatible both of game window and simulator window
+    /// </summary>
     private void HandleInput()
     {
         if (!GameManager.Instance.IsGameOver && !_isPlayerDead)
@@ -115,6 +116,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles Player Mobile Input
+    /// </summary>
     private void HandleTouchInput()
     {
         if (Input.touchCount > 0)
@@ -170,6 +174,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handles Player PC Input
+    /// </summary>
     private void HandleKeyboardInput()
     {
         if (Input.GetKeyDown(KeyCode.Space) && !GameManager.Instance.HasGameStarted)
@@ -188,6 +195,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Starts Game if not started yet
+    /// </summary>
     private void StartGame()
     {
         GameManager.Instance.StartGame();
@@ -195,12 +205,18 @@ public class PlayerController : MonoBehaviour
         _walkVFX.gameObject.SetActive(true);
     }
 
+    /// <summary>
+    /// Moves player forward
+    /// </summary>
     private void Move()
     {
         _rigidbody2D.velocity = new Vector2(_runSpeed * Time.fixedDeltaTime, _rigidbody2D.velocity.y);
         _animator.SetFloat("yVelocity", _rigidbody2D.velocity.y);
     }
 
+    /// <summary>
+    /// Player Jump Functionality that handles jump and animation
+    /// </summary>
     private void Jump()
     {
         _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, _jumpForce);
@@ -210,13 +226,16 @@ public class PlayerController : MonoBehaviour
         _walkVFX.SetActive(_isGrounded);
     }
 
+    /// <summary>
+    /// Slide Functionality
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator Slide()
     {
         _isSliding = true;
+
         float boxSizeY = _boxCollider2D.size.y;
-
         float halfBoxSizeY = _boxCollider2D.size.y / 2;
-
         float offsetBoxY = halfBoxSizeY / 2;
 
         _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, halfBoxSizeY);
@@ -233,24 +252,9 @@ public class PlayerController : MonoBehaviour
         _animator.SetBool("isSliding", _isSliding);
     }
 
-    private void CheckGround()
-    {
-        _groundHit = Physics2D.Raycast(transform.position, Vector2.down, 1f, LayerMask.GetMask("Ground"));
-        _isGrounded = _groundHit.collider != null;
-        _animator.SetBool("isJumping", !_isGrounded);
-    }
-
-    private void AlignPlayerAngleBasedOnSurface()
-    {
-        if (_groundHit.collider != null)
-        {
-            Vector2 surfaceNormal = _groundHit.normal;
-            float angle = Mathf.Atan2(surfaceNormal.y, surfaceNormal.x) * Mathf.Rad2Deg + 90;
-            Quaternion targetRotation = Quaternion.Euler(0, 0, angle);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 5);
-        }
-    }
-
+    /// <summary>
+    /// Function Responsible for Shielding Player on Shield Power Pick Up
+    /// </summary>
     public void OnShieldPickedUp()
     {
         _localTimer = _shieldDuration;
@@ -258,6 +262,10 @@ public class PlayerController : MonoBehaviour
         _shield.gameObject.SetActive(_isShielded);
     }
 
+    /// <summary>
+    /// Plays the Trigger Animation based on Player State
+    /// </summary>
+    /// <param name="playerState"></param>
     private void PlayAnimationBasedOnPlayerState(PlayerState playerState)
     {
         _animator.SetTrigger(playerState.ToString());
@@ -297,11 +305,18 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Change Game State and Pass Current Score
+    /// </summary>
     private void OnPlayerDead()
     {
         GameManager.Instance.TriggerGameOver(ReturnCurrentScore());
     }
 
+    /// <summary>
+    /// Returns Current Score based on the Initial position 
+    /// </summary>
+    /// <returns></returns>
     private long ReturnCurrentScore()
     {
         float DistanceTravelled = Vector3.Distance(_initialPosition, transform.position);
@@ -311,6 +326,9 @@ public class PlayerController : MonoBehaviour
         return score;
     }
 
+    /// <summary>
+    /// Resets Player On Game Reset
+    /// </summary>
     private void OnRetry()
     {
         PlayAnimationBasedOnPlayerState(PlayerState.IDLE);

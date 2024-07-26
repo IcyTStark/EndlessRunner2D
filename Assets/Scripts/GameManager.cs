@@ -33,12 +33,19 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Starts Game
+    /// </summary>
     public void StartGame()
     {
         _hasGameStarted = true;
         UIManager.Instance.HandleMenuScreen(!_hasGameStarted);
     }
 
+    /// <summary>
+    /// On Game Over Condition
+    /// </summary>
+    /// <param name="highScore"></param>
     public void TriggerGameOver(float highScore)
     {
         _isGameOver = true;
@@ -48,6 +55,9 @@ public class GameManager : MonoBehaviour
         UIManager.Instance.HandleGameOverScreen(IsGameOver);
     }
 
+    /// <summary>
+    /// Reset Game Controller Values and Invokes Retry Callback to all class
+    /// </summary>
     public void OnRetry()
     {
         _hasGameStarted = false;
@@ -59,6 +69,10 @@ public class GameManager : MonoBehaviour
         }); 
     }
 
+    /// <summary>
+    /// Refreshes the frame as it deactivates and activates to build the terrain
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator RefreshFramesAndResetPlayer()
     {
         _proceduralTerrainGenerator.gameObject.SetActive(false);
