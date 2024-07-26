@@ -85,7 +85,3 @@ The `RemovePreviousPoints` method removes old terrain points to make room for ne
 ### Debugging
 
 The `OnDrawGizmos` method draws gizmos in the Unity Editor to visualize the end of the current terrain.
-
-## Conclusion
-
-The `ProceduralTerrainGenerator` script provides a flexible and customizable way to generate endless 2D terrain in Unity. By adjusting the provided settings and methods, you can create unique and engaging levels for your game.
