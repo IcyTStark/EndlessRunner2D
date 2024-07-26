@@ -30,11 +30,7 @@ public class GameManager : MonoBehaviour
         if(Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
-            return;
         }
-
-        Destroy(gameObject);    
     }
 
     public void StartGame()
@@ -57,8 +53,21 @@ public class GameManager : MonoBehaviour
         _hasGameStarted = false;
         _isGameOver = false;
 
+        _proceduralTerrainGenerator.OnRetry(() =>
+        {
+            StartCoroutine(RefreshFramesAndResetPlayer());
+        }); 
+    }
+
+    private IEnumerator RefreshFramesAndResetPlayer()
+    {
+        _proceduralTerrainGenerator.gameObject.SetActive(false);
+        yield return new WaitForEndOfFrame();
+
+        _proceduralTerrainGenerator.gameObject.SetActive(true);
+        yield return new WaitForEndOfFrame();
+
         _playerController.OnRetryClicked.Invoke();
-        _proceduralTerrainGenerator.OnRetryClicked.Invoke();
         _followCamera.OnRetryClicked.Invoke();
     }
 }

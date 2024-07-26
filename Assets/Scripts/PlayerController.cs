@@ -16,15 +16,19 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Touch Attributes:")]
     private Touch _touch;
+    private Vector3 _touchStartPosition;
+    private Vector3 _touchEndPosition;
 
     [Header("Player Attributes:")]
     [SerializeField][Range(0f, 1000f)] private float _runSpeed = 10f;
     [SerializeField][Range(0f, 100f)] private float _jumpForce = 10f;
     [SerializeField] private float _slideDuration = 1f;
+    [SerializeField] private float _gravityScale;
 
     [Header("Player Control Variables:")]
     [SerializeField] private bool _isGrounded = false;
     [SerializeField] private bool _isSliding = false;
+    [SerializeField] private bool _isPlayerDead = false;
 
     [Header("Component References:")]
     [SerializeField] private Rigidbody2D _rigidbody2D;
@@ -36,6 +40,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("VFX References: ")]
     [SerializeField] private GameObject _walkVFX;
+    [SerializeField] private ParticleSystem _groundContactVFX;
 
     [Header("SFX References: ")]
     private GameObject _jumpSFX;
@@ -43,7 +48,7 @@ public class PlayerController : MonoBehaviour
     [Header("HighScore References")]
     [SerializeField] private Vector3 _initialPosition;
 
-    public UnityEvent OnRetryClicked;
+    [HideInInspector] public UnityEvent OnRetryClicked;
 
     private void Start()
     {
@@ -54,6 +59,8 @@ public class PlayerController : MonoBehaviour
         _initialPosition = transform.position;
 
         OnRetryClicked.AddListener(OnRetry);
+
+        _rigidbody2D.gravityScale = _gravityScale;
     }
 
     private void Update()
@@ -62,23 +69,23 @@ public class PlayerController : MonoBehaviour
         {
             HandleInput();
 
-            UIManager.Instance.UpdatePlayerScore(ReturnHighScore());
+            UIManager.Instance.UpdatePlayerScore(ReturnCurrentScore());
         }
     }
 
     private void FixedUpdate()
     {
-        if (GameManager.Instance.HasGameStarted && !GameManager.Instance.IsGameOver)
+        if (GameManager.Instance.HasGameStarted && !_isPlayerDead && !GameManager.Instance.IsGameOver)
         {
             Move();
             //CheckGround();
-            AlignPlayerAngleBasedOnSurface();
+            //AlignPlayerAngleBasedOnSurface();
         }
     }
 
     private void HandleInput()
     {
-        if (!GameManager.Instance.IsGameOver)
+        if (!GameManager.Instance.IsGameOver && !_isPlayerDead)
         {
             if (GameManager.Instance.isRunningOnASimulator)
             {
@@ -101,13 +108,46 @@ public class PlayerController : MonoBehaviour
                 if (!GameManager.Instance.HasGameStarted)
                 {
                     StartGame();
+                    return;
                 }
                 else
                 {
-                    if (_isGrounded && !_isSliding)
+                    _touchStartPosition = _touch.position;
+                }
+            }
+            else if (_touch.phase == TouchPhase.Moved)
+            {
+                if (GameManager.Instance.HasGameStarted)
+                {
+                    _touchEndPosition = _touch.position;
+
+                    float x = _touchEndPosition.x - _touchStartPosition.x;
+                    float y = _touchEndPosition.y - _touchStartPosition.y;
+
+                    // Detect vertical movement
+                    if (Mathf.Abs(y) > Mathf.Abs(x))
                     {
-                        Jump();
+                        if (y > 0)
+                        {
+                            // Slide up to jump
+                            if (_isGrounded && !_isSliding)
+                            {
+                                Jump();
+                            }
+                        }
+                        else if (y < 0)
+                        {
+                            // Slide down to slide
+                            if (_isGrounded && !_isSliding)
+                            {
+                                StartCoroutine(Slide());
+                            }
+                        }
                     }
+                }
+                else
+                {
+                    return;
                 }
             }
         }
@@ -156,18 +196,24 @@ public class PlayerController : MonoBehaviour
     private IEnumerator Slide()
     {
         _isSliding = true;
-        // Adjust player collider and position for sliding
-        _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, _boxCollider2D.size.y / 2);
-        _boxCollider2D.offset = new Vector2(_boxCollider2D.offset.x, _boxCollider2D.offset.y / 2);
-        PlayAnimationBasedOnPlayerState(PlayerState.SLIDE);
+        float boxSizeY = _boxCollider2D.size.y;
+
+        float halfBoxSizeY = _boxCollider2D.size.y / 2;
+
+        float offsetBoxY = halfBoxSizeY / 2;
+
+        _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, halfBoxSizeY);
+        _boxCollider2D.offset = new Vector2(_boxCollider2D.offset.x, _boxCollider2D.offset.y - offsetBoxY);
+        _animator.SetBool("isSliding", _isSliding);
 
         yield return new WaitForSeconds(_slideDuration);
 
+        halfBoxSizeY = _boxCollider2D.size.y * 2;
+
         _isSliding = false;
-        // Reset player collider and position after sliding
-        _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, _boxCollider2D.size.y * 2);
-        _boxCollider2D.offset = new Vector2(_boxCollider2D.offset.x, _boxCollider2D.offset.y * 2);
-        PlayAnimationBasedOnPlayerState(PlayerState.RUN);
+        _boxCollider2D.offset = new Vector2(_boxCollider2D.offset.x, _boxCollider2D.offset.y + offsetBoxY);
+        _boxCollider2D.size = new Vector2(_boxCollider2D.size.x, halfBoxSizeY);
+        _animator.SetBool("isSliding", _isSliding);
     }
 
     private void CheckGround()
@@ -197,14 +243,24 @@ public class PlayerController : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Ground") && GameManager.Instance.HasGameStarted)
         {
+            if (!_isGrounded)
+            {
+                _groundContactVFX.Play();
+            }
+
             _isGrounded = true;
+
             _animator.SetBool("isJumping", false);
+
             _walkVFX.SetActive(_isGrounded);
         }
         else if (collision.gameObject.CompareTag("Obstacle"))
         {
             _isGrounded = true;
+            _isSliding = false;
+            _isPlayerDead = true;
             _animator.SetBool("isJumping", false);
+            _animator.SetBool("isSliding", _isSliding);
             PlayAnimationBasedOnPlayerState(PlayerState.DEAD);
             _walkVFX.SetActive(false);
         }
@@ -212,10 +268,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnPlayerDead()
     {
-        GameManager.Instance.TriggerGameOver(ReturnHighScore());
+        GameManager.Instance.TriggerGameOver(ReturnCurrentScore());
     }
 
-    private long ReturnHighScore()
+    private long ReturnCurrentScore()
     {
         float DistanceTravelled = Vector3.Distance(_initialPosition, transform.position);
 
@@ -226,8 +282,12 @@ public class PlayerController : MonoBehaviour
 
     private void OnRetry()
     {
+        PlayAnimationBasedOnPlayerState(PlayerState.IDLE);
+
+        _rigidbody2D.velocity = Vector2.zero;
+
         transform.position = _initialPosition;
 
-        PlayAnimationBasedOnPlayerState(PlayerState.IDLE);
+        _isPlayerDead = false;
     }
 }

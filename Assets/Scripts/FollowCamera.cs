@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-[ExecuteInEditMode]
+[RequireComponent(typeof(Camera))]
 public class FollowCamera : MonoBehaviour
 {
     [Header("Camera Component: ")]
@@ -13,7 +13,7 @@ public class FollowCamera : MonoBehaviour
     [Header("Camera Properties: ")]
     [SerializeField] private Transform _playerTransform;
 
-    [SerializeField] private Vector3 _desiredPosition;
+    private Vector3 _desiredPosition;
 
     [SerializeField] private Vector3 _cameraOffset;
 
@@ -21,12 +21,14 @@ public class FollowCamera : MonoBehaviour
 
     [SerializeField]
     [Range(0f, 5f)]
-    public float CameraSmoothSpeed = 1.1f;
+    private float _cameraSmoothSpeed = 1.1f;
 
-    public UnityEvent OnRetryClicked;
+    [HideInInspector] public UnityEvent OnRetryClicked;
 
     private void Start()
     {
+        if (_camera == null) _camera = GetComponent<Camera>();
+
         OnRetryClicked.AddListener(OnRetry);
     }
 
@@ -34,7 +36,7 @@ public class FollowCamera : MonoBehaviour
     {
         _desiredPosition = _playerTransform.position + _cameraOffset;
 
-        transform.position = Vector3.SmoothDamp(transform.position, _desiredPosition, ref _velocity, CameraSmoothSpeed);
+        transform.position = Vector3.SmoothDamp(transform.position, _desiredPosition, ref _velocity, _cameraSmoothSpeed);
     }
 
     private void OnRetry()

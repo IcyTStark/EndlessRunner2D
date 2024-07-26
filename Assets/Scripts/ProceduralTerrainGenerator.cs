@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,26 +35,24 @@ public class ProceduralTerrainGenerator : MonoBehaviour
     private int _newPointPositionIndexValue = 0;
 
     [Header("Obstacle Controllers: ")]
-    [SerializeField] private ObstacleGenerator _obstacleGenerator;
+    [SerializeField] private ObjectPooler _obstacleGenerator;
     [SerializeField] private List<int> _randomSpawnIndex;
     [SerializeField] private List<GameObject> _activeObstacles;
-
-    public UnityEvent OnRetryClicked;
 
     private void Start()
     {
         Initialize();
-
-        OnRetryClicked.AddListener(OnRetry);
     }
 
-    private void Initialize()
+    private void Initialize(Action onGenerated = null)
     {
         _currentLevelLength = _initialLevelLength;
 
         GenerateInitialTerrain();
 
         GenerateObstacles();
+
+        onGenerated?.Invoke();
     }
 
     private void Update()
@@ -64,7 +63,7 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
-    private void GenerateInitialTerrain()
+    private void GenerateInitialTerrain(Action onGenerated = null)
     {
         _spriteShapeController.spline.Clear();
 
@@ -125,13 +124,16 @@ public class ProceduralTerrainGenerator : MonoBehaviour
             return;
         }
 
-        float playerDistance = Vector3.Distance(_playerReference.position, _spriteShapeController.spline.GetPosition(_currentLevelLength - 2));
-
-        if (playerDistance < _playerDistanceThreshold)
+        if (_playerReference != null)
         {
-            RemovePreviousPoints();
+            float playerDistance = Vector3.Distance(_playerReference.position, _spriteShapeController.spline.GetPosition(_currentLevelLength - 2));
 
-            StartCoroutine(GenerateNewSegment());  
+            if (playerDistance < _playerDistanceThreshold)
+            {
+                RemovePreviousPoints();
+
+                StartCoroutine(GenerateNewSegment());
+            }
         }
     }
 
@@ -152,9 +154,9 @@ public class ProceduralTerrainGenerator : MonoBehaviour
 
         _isGeneratingNewSegment = false;
 
-        RemovePreviousObstacles();
-
         GenerateObstacles();
+
+        //RemovePreviousObstacles();
     }
 
     private void UpdateBottomPoints()
@@ -192,13 +194,21 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         _spriteShapeController.spline.InsertPointAt(_currentLevelLength + 1, bottomLeft);
     }
 
+    [ContextMenu("Test")]
     private void GenerateObstacles()
     {
+        if (_activeObstacles.Count >= 6)
+        {
+            RemovePreviousObstacles();
+        }
+
         _randomSpawnIndex = GenerateUniqueRandomNumbers();
 
         for (int i = 0; i < _randomSpawnIndex.Count; i++)
         {
-            GameObject rock = _obstacleGenerator.GetPooledObject();
+            bool isGroundObstacle = GetRandomZeroOrOne() == 1 ? true : false;
+
+            GameObject rock = isGroundObstacle ? _obstacleGenerator.GetGroundPooledObject() : _obstacleGenerator.GetAirPooledObject();
 
             if(rock != null)
             {
@@ -208,17 +218,31 @@ public class ProceduralTerrainGenerator : MonoBehaviour
             rock.gameObject.SetActive(true);
 
             _activeObstacles.Add(rock);
-        }
+        } 
     }
 
-    private void RemovePreviousObstacles()
+    public int GetRandomZeroOrOne()
     {
-        for (int i = 0; i < _activeObstacles.Count; i++)
+        return UnityEngine.Random.Range(0, 2);
+    }
+
+    private void RemovePreviousObstacles(bool removeAllObstacles = false)
+    {
+        int numberOfObstaclesToRemove = removeAllObstacles ? _activeObstacles.Count : 3;
+
+        for (int i = 0; i < numberOfObstaclesToRemove; i++)
         {
             _activeObstacles[i].gameObject.SetActive(false);
         }
 
-        _activeObstacles.Clear();
+        if (removeAllObstacles)
+        {
+            _activeObstacles.Clear();
+        }
+        else
+        {
+            _activeObstacles.RemoveRange(0, numberOfObstaclesToRemove);
+        }
 
         if (_randomSpawnIndex.Count > 0)
         {
@@ -252,16 +276,16 @@ public class ProceduralTerrainGenerator : MonoBehaviour
         }
     }
 
-    private void OnRetry()
+    public void OnRetry(Action onGenerated)
     {
         //Reset all the values
         _lastGeneratedPosition = Vector3.zero;
 
-        RemovePreviousObstacles();
+        RemovePreviousObstacles(true);
 
         _newPointPositionIndexValue = 0;
 
-        Initialize();
+        Initialize(onGenerated);
     }
 }
 
