@@ -179,6 +179,50 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void HandleKeyboardInput()
     {
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (!GameManager.Instance.HasGameStarted)
+            {
+                StartGame();
+                return;
+            }
+            else
+            {
+                _touchStartPosition = Input.mousePosition;
+            }
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            if (GameManager.Instance.HasGameStarted)
+            {
+                _touchEndPosition = Input.mousePosition;
+
+                float x = _touchEndPosition.x - _touchStartPosition.x;
+                float y = _touchEndPosition.y - _touchStartPosition.y;
+
+                // Detect vertical movement
+                if (Mathf.Abs(y) > Mathf.Abs(x))
+                {
+                    if (y > 0)
+                    {
+                        // Move up to jump
+                        if (_isGrounded && !_isSliding)
+                        {
+                            Jump();
+                        }
+                    }
+                    else if (y < 0)
+                    {
+                        // Move down to slide
+                        if (_isGrounded && !_isSliding)
+                        {
+                            StartCoroutine(Slide());
+                        }
+                    }
+                }
+            }
+        }
+
         if (Input.GetKeyDown(KeyCode.Space) && !GameManager.Instance.HasGameStarted)
         {
             StartGame();
